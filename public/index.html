@@ -3,31 +3,20 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>JobBoard — Landing</title>
+<title>Jobs Arena — Landing</title>
 <style>
-  :root{ --bg:#f6f8fb; --card:#ffffff; --accent:#0ea5a4; --muted:#6b7280; --glass: rgba(255,255,255,0.7); }
+  :root{ --bg:#f6f8fb; --card:#ffffff; --accent:#0ea5a4; --muted:#6b7280; }
   *{box-sizing:border-box}
   body{margin:0;font-family:Inter,system-ui,Arial;
     background:linear-gradient(180deg,#eef2f7 0%,var(--bg) 100%);
     color:#0f172a}
 
-  /* top bar & hamburger */
+  /* top bar */
   .topbar{position:fixed;left:0;right:0;top:0;height:64px;display:flex;
     align-items:center;justify-content:space-between;padding:0 16px;z-index:40;background:transparent}
-  .hamburger{width:44px;height:44px;border-radius:10px;background:var(--card);
-    box-shadow:0 4px 14px rgba(2,6,23,0.08);display:flex;align-items:center;justify-content:center;
-    cursor:pointer;border:1px solid #e6eef2}
-  .hamburger .lines{width:20px;height:2px;background:#0f172a;position:relative}
-  .hamburger .lines::before,.hamburger .lines::after{content:'';position:absolute;left:0;right:0;height:2px;background:#0f172a}
-  .hamburger .lines::before{top:-6px}.hamburger .lines::after{top:6px}
   .brand{font-weight:700;color:var(--accent);margin-left:8px}
-
-  /* side nav */
-  .sidenav{position:fixed;left:16px;top:80px;background:var(--card);padding:12px;border-radius:12px;
-    box-shadow:0 10px 30px rgba(2,6,23,0.08);display:none;z-index:45}
-  .sidenav a{display:block;padding:8px 10px;color:#0f172a;text-decoration:none;
-    border-radius:8px;font-weight:600}
-  .sidenav a:hover{background:#f3faf9}
+  .btn{padding:12px 18px;border-radius:10px;background:var(--accent);color:white;text-decoration:none;font-weight:700}
+  .btn.secondary{background:white;border:1px solid #e6eef2;color:#0f172a}
 
   /* hero */
   .hero{display:grid;grid-template-columns:1fr 420px;gap:28px;
@@ -35,26 +24,34 @@
   .hero-left h1{font-size:44px;line-height:1.02;margin-bottom:16px}
   .hero-left p{color:var(--muted);margin-bottom:20px;max-width:560px}
   .cta-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-  .btn{padding:12px 18px;border-radius:10px;background:var(--accent);
-    color:white;text-decoration:none;font-weight:700}
-  .btn.secondary{background:white;border:1px solid #e6eef2;color:#0f172a}
 
-  /* hero image card */
+  /* hero image animation + slider */
+  .hero-right img{width:100%;border-radius:16px;box-shadow:0 18px 40px rgba(2,6,23,0.08);
+    animation:float 4s ease-in-out infinite;transition:opacity 1s ease-in-out}
+  @keyframes float {
+    0%,100%{transform:translateY(0)}
+    50%{transform:translateY(-12px)}
+  }
+
+  /* job preview card */
   .hero-card{background:linear-gradient(180deg,#ffffff 0%,#f8feff 100%);
     border-radius:16px;padding:18px;box-shadow:0 18px 40px rgba(2,6,23,0.08);
-    display:flex;flex-direction:column;gap:14px}
-  .hero-card .stat{display:flex;align-items:center;gap:12px}
-  .pill{padding:6px 10px;border-radius:999px;font-weight:700;
-    background:#ecfeff;color:#055e57;font-size:13px}
-  .job-preview{display:flex;flex-direction:column;gap:6px}
-  .job-preview .title{font-weight:700}
-  .job-preview .meta{color:var(--muted);font-size:13px}
+    display:flex;flex-direction:column;gap:14px;margin-top:22px}
+  .hero-card .title{font-weight:700}
+  .hero-card .meta{color:var(--muted);font-size:13px}
 
   /* features grid */
   .features{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;padding:28px 6%}
   .feature{background:var(--card);padding:16px;border-radius:12px;
     box-shadow:0 8px 24px rgba(2,6,23,0.04)}
   .feature h4{margin-bottom:8px}
+
+  /* categories grid */
+  .categories{padding:40px 6%;background:#fff}
+  .categories h2{margin-bottom:20px}
+  .cat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px}
+  .cat-card{background:#f9fafa;padding:16px;border-radius:12px;box-shadow:0 6px 20px rgba(2,6,23,0.06)}
+  .cat-card h3{margin-top:0;color:var(--accent)}
 
   /* popup modal */
   .popup-overlay{position:fixed;top:0;left:0;width:100%;height:100%;
@@ -66,17 +63,14 @@
   .popup-box button{padding:10px 20px;background:#2563eb;color:white;border:none;
     border-radius:8px;cursor:pointer}
 
-  /* footer */
   footer{padding:28px 6%;text-align:center;color:var(--muted);font-size:14px}
 
-  /* responsive */
   @media(max-width:980px){
     .hero{grid-template-columns:1fr; padding-top:100px}
     .features{grid-template-columns:repeat(2,1fr)}
   }
   @media(max-width:600px){
     .features{grid-template-columns:1fr}
-    .sidenav{left:8px;top:72px}
   }
 </style>
 </head>
@@ -85,10 +79,7 @@
 <!-- top bar -->
 <div class="topbar">
   <div style="display:flex;align-items:center">
-    <div class="hamburger" id="hamburger" aria-label="menu" title="Menu" role="button">
-      <div class="lines"></div>
-    </div>
-    <div style="margin-left:12px"><span class="brand">JobBoard</span></div>
+    <span class="brand">Jobs Arena</span>
   </div>
   <div style="display:flex;gap:8px;align-items:center">
     <a class="btn secondary" href="login.html">Login</a>
@@ -97,63 +88,44 @@
   </div>
 </div>
 
-<!-- side nav -->
-<nav class="sidenav" id="sidenav" aria-hidden="true">
-  <a href="index.html">Home</a>
-  <a href="jobs.html">Browse Jobs</a>
-  <a href="register.html">Register</a>
-  <a href="login.html">Login</a>
-  <a href="dashboard.html">Dashboard</a>
-  <a href="admin-dashboard.html">Admin</a>
-</nav>
-
 <!-- hero -->
-<section class="hero" aria-label="hero">
+<section class="hero">
   <div class="hero-left">
-    <h1>Find work — from Housekeeping to Engineering and Medical roles</h1>
+    <h1>Find work — from Housekeeping to Engineering, Medical, IT and Online roles</h1>
     <p>Jobs for every field. Browse categories, join as a member for exclusive offers, and apply directly. Employers and admins can post jobs, add members, and run promotions.</p>
-
-    <!-- ✅ restricted links -->
     <div class="cta-row">
       <a class="btn" href="#" onclick="goBrowseJobs()">Browse Jobs</a>
       <a class="btn secondary" href="register.html">Get Started</a>
       <a class="btn" href="#" onclick="goAdmin()">Admin Dashboard</a>
     </div>
-
     <div style="margin-top:20px;color:var(--muted)">
-      Featured categories: <strong>Housekeeping</strong>, <strong>Mechanics</strong>, <strong>Medical</strong>, <strong>Engineering</strong>
+      Featured categories: <strong>Housekeeping</strong>, <strong>Mechanics</strong>, <strong>Medical</strong>, <strong>Engineering</strong>, <strong>IT</strong>, <strong>Online Jobs</strong>
     </div>
-  </div>
-
-  <aside class="hero-card" role="region" aria-label="featured jobs">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <div class="pill">New</div>
-      <div style="font-size:12px;color:var(--muted)">Top picks curated by JobBoard</div>
-    </div>
-    <div class="job-preview">
+    <!-- featured job samples -->
+    <aside class="hero-card">
       <div class="title">Senior Nurse — Night Shift</div>
       <div class="meta">Kenya Medical • Nairobi — <strong>Medical</strong></div>
-    </div>
-    <div class="job-preview">
       <div class="title">Mechanical Technician</div>
       <div class="meta">AutoCare • Mombasa — <strong>Mechanics</strong></div>
-    </div>
-    <div class="job-preview">
       <div class="title">Housekeeping Supervisor</div>
       <div class="meta">ComfortStay Hotels — <strong>Housekeeping</strong></div>
-    </div>
-  </aside>
+    </aside>
+  </div>
+  <div class="hero-right">
+    <!-- rotating advertisement images -->
+    <img id="adImage" src="https://cdn.dribbble.com/users/118246/screenshots/12345678/media/advert.gif" alt="Jobs Arena Ad">
+  </div>
 </section>
 
 <!-- features -->
-<section class="features" aria-label="features">
+<section class="features">
   <div class="feature">
     <h4>Wide Range of Jobs</h4>
     <div class="muted">From entry-level to specialized professionals — all categories covered.</div>
   </div>
   <div class="feature">
     <h4>Member Discounts</h4>
-    <div class="muted">Exclusive offers for members — admin-controlled packages for night shifts & promos.</div>
+    <div class="muted">Exclusive offers for members — admin-controlled packages & promos.</div>
   </div>
   <div class="feature">
     <h4>Trusted Team</h4>
@@ -161,21 +133,40 @@
   </div>
 </section>
 
+<!-- categories -->
+<section class="categories">
+  <h2>Job Categories</h2>
+  <div class="cat-grid">
+    <div class="cat-card">
+      <h3>IT Jobs</h3>
+      <p>Software Developer</p>
+      <p>Network Administrator</p>
+      <p>IT Support Specialist</p>
+      <p>Data Analyst</p>
+    </div>
+    <div class="cat-card">
+      <h3>Online Jobs</h3>
+      <p>Content Writer</p>
+      <p>Online Marketing</p>
+      <p>Virtual Assistant</p>
+      <p>Freelance Designer</p>
+    </div>
+    <div class="cat-card">
+      <h3>Other Fields</h3>
+      <p>Engineering Roles</p>
+      <p>Medical Professionals</p>
+      <p>Mechanics</p>
+      <p>Housekeeping</p>
+    </div>
+  </div>
+</section>
+
 <footer>
-  © <span id="year"></span> JobBoard — Connecting people to work
+  © <span id="year"></span> Jobs Arena — Connecting people to work
 </footer>
 
 <script>
   window.API_BASE = "http://localhost:5000";
-
-  // hamburger toggle
-  const hamburger = document.getElementById('hamburger');
-  const sidenav = document.getElementById('sidenav');
-  hamburger.addEventListener('click', ()=> {
-    const vis = sidenav.style.display === 'block';
-    sidenav.style.display = vis ? 'none' : 'block';
-    sidenav.setAttribute('aria-hidden', vis ? 'true' : 'false');
-  });
 
   // ✅ popup announcements
   async function loadPopups() {
@@ -184,9 +175,7 @@
       const popups = await res.json();
       const enabled = popups.filter(p => p.enabled);
       if (enabled.length > 0) cyclePopups(enabled);
-    } catch (err) {
-      console.error("Error fetching popups:", err);
-    }
+    } catch (err) { console.error("Error fetching popups:", err); }
   }
   function cyclePopups(popups) {
     let index = 0;
@@ -241,8 +230,25 @@
     }
     window.location = "admin-dashboard.html";
   }
+
+  // ✅ Advertisement slider
+  const adImages = [
+    "https://cdn.dribbble.com/users/118246/screenshots/12345678/media/advert.gif",
+    "https://cdn.dribbble.com/users/234567/screenshots/87654321/media/banner1.gif",
+    "https://cdn.dribbble.com/users/345678/screenshots/13579246/media/banner2.gif"
+  ];
+  let adIndex = 0;
+  const adImageEl = document.getElementById("adImage");
+
+  setInterval(() => {
+    adIndex = (adIndex + 1) % adImages.length;
+    adImageEl.style.opacity = 0;
+    setTimeout(() => {
+      adImageEl.src = adImages[adIndex];
+      adImageEl.style.opacity = 1;
+    }, 500);
+  }, 5000);
 </script>
 </body>
 </html>
-
 

@@ -8,6 +8,7 @@ const memberRoutes = require("./routes/members");
 const offerRoutes = require("./routes/offers");
 const popupRoutes = require("./routes/popups");
 const jwt = require("jsonwebtoken");
+const path = require("path"); // ✅ Added for serving frontend
 
 // Load environment variables
 dotenv.config();
@@ -21,11 +22,13 @@ const app = express();
 // ========================
 // Middleware
 // ========================
-app.use(cors({
-  origin: "*", // replace with your frontend URL in production
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"]
-}));
+app.use(
+  cors({
+    origin: "*", // replace with your frontend URL in production
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 app.use(express.json());
 
 // ========================
@@ -38,10 +41,13 @@ app.use("/api/offers", offerRoutes);
 app.use("/api/popups", popupRoutes);
 
 // ========================
-// Health check
+// Serve static frontend files
 // ========================
+app.use(express.static(path.join(__dirname, "public")));
+
+// Catch-all route to serve index.html
 app.get("/", (req, res) => {
-  res.send("✅ JobBoard API is running...");
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 // ========================
@@ -59,7 +65,8 @@ function verifyToken(req, res, next) {
 }
 
 function adminOnly(req, res, next) {
-  if (!req.user || req.user.role !== "admin") return res.status(403).json({ message: "Admin only" });
+  if (!req.user || req.user.role !== "admin")
+    return res.status(403).json({ message: "Admin only" });
   next();
 }
 
@@ -88,10 +95,13 @@ function adminOnly(req, res, next) {
     await sequelize.sync({ alter: true }); // keeps schema in sync
 
     const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => console.log(`🚀 Server running at http://localhost:${PORT}`));
+    app.listen(PORT, () =>
+      console.log(`🚀 Server running at http://localhost:${PORT}`)
+    );
   } catch (err) {
     console.error("❌ Unable to connect to the database:", err);
   }
 })();
+
 
 
