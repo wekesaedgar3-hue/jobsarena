@@ -110,6 +110,26 @@ body{
 .cat-card{background:#f9fafa;padding:16px;border-radius:12px;box-shadow:0 6px 20px rgba(2,6,23,0.06)}
 .cat-card h3{margin-top:0;color:var(--accent)}
 
+/* about section */
+.about{
+  background:#fff;padding:40px 6%;margin-top:40px;border-radius:12px;
+  box-shadow:0 6px 20px rgba(2,6,23,0.06);
+}
+.about h2{color:var(--accent);margin-bottom:16px;}
+.about p{color:var(--muted);line-height:1.6;}
+
+/* contact section */
+.contact{
+  background:#f6f8fb;padding:40px 6%;margin-top:40px;border-radius:12px;
+  display:flex;flex-direction:column;gap:12px;align-items:start;
+}
+.contact h2{color:var(--accent);margin-bottom:16px;}
+.contact a{
+  display:flex;align-items:center;gap:8px;text-decoration:none;color:#0f172a;font-weight:600;
+}
+.contact a:hover{color:var(--accent);}
+.contact i{font-size:20px;}
+
 /* popup modal */
 .popup-overlay{position:fixed;top:0;left:0;width:100%;height:100%;
   background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999}
@@ -235,6 +255,19 @@ footer{padding:28px 6%;text-align:center;color:var(--muted);font-size:14px}
   </div>
 </section>
 
+<!-- about section -->
+<section class="about">
+  <h2>About Jobs Arena</h2>
+  <p>Jobs Arena is your ultimate platform to connect with verified job opportunities across multiple industries. From IT to Medical, Housekeeping to Engineering, we ensure our members have access to the best jobs and exclusive offers. Join our community and take advantage of our membership perks for only <strong>$5.88</strong> — designed to boost your career and connect you to reliable employers seamlessly.</p>
+</section>
+
+<!-- contact section -->
+<section class="contact">
+  <h2>Contact Us</h2>
+  <a href="tel:+254116349931"><i>📞</i> Call: +254 116349931</a>
+  <a href="https://wa.me/254116349931" target="_blank"><i>💬</i> WhatsApp: +254 116349931</a>
+</section>
+
 <footer>
   © <span id="year"></span> JobBoard — Connecting people to work
 </footer>
@@ -323,3 +356,4 @@ function goAdmin() {
 </script>
 </body>
 </html>
+
