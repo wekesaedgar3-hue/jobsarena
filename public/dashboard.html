@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Dashboard — JobBoard</title>
+<style>
+  :root{--accent:#0ea5a4;--muted:#6b7280}
+  *{box-sizing:border-box}
+  body{font-family:Inter,system-ui,Arial;background:#f6f8fb;margin:0;color:#0f172a}
+  .top{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:#fff;box-shadow:0 6px 20px rgba(2,6,23,0.06)}
+  .brand{font-weight:800;color:var(--accent)}
+  .wrap{max-width:1100px;margin:18px auto;padding:10px}
+  .grid{display:grid;grid-template-columns:220px 1fr;gap:18px}
+  .side{background:#fff;padding:12px;border-radius:12px}
+  .side button{display:block;width:100%;padding:10px;border-radius:8px;border:none;margin-bottom:8px;font-weight:700;cursor:pointer}
+  .main{background:transparent}
+  .card{background:#fff;padding:16px;border-radius:12px;box-shadow:0 10px 30px rgba(2,6,23,0.06)}
+  .jobs-grid,.members-grid,.offers-grid{display:grid;gap:12px;margin-top:12px}
+  .job-card,.member-card,.offer-card{background:#fff;padding:12px;border-radius:10px;border:1px solid #eef6f5;opacity:1;transition: background 1s, opacity 1s;}
+  
+  /* Flash animation */
+  @keyframes flashFade {
+    0% { background: #fef3c7; opacity: 0.8; }
+    50% { background: #fef3c7; opacity: 1; }
+    100% { background: #fff; opacity: 1; }
+  }
+  .flash { animation: flashFade 2s ease forwards; }
+
+  .badge{display:inline-block;padding:6px 10px;border-radius:999px;background:#e6f9f7;color:#036;font-weight:700}
+  .btn{padding:6px 12px;border-radius:8px;background:var(--accent);color:#fff;border:none;cursor:pointer}
+  @media(max-width:900px){.grid{grid-template-columns:1fr}.side{order:2}}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="brand">JobBoard</div>
+  <div>
+    <button id="logoutBtn" class="btn" style="background:#ef4444">Logout</button>
+  </div>
+</div>
+
+<div class="wrap">
+  <div id="welcome" style="margin-bottom:12px"></div>
+
+  <div class="grid">
+    <aside class="side">
+      <button data-tab="jobs" class="tabBtn">Available Jobs</button>
+      <button data-tab="members" class="tabBtn">Members</button>
+      <button data-tab="offers" class="tabBtn">Offers</button>
+      <hr style="margin:12px 0"/>
+      <div style="font-size:13px;color:var(--muted)">Quick Links</div>
+      <a href="index.html" style="display:block;margin-top:8px;color:var(--muted)">Go to landing</a>
+      <a id="adminLink" href="admin-dashboard.html" style="display:block;margin-top:8px;color:var(--muted)">Admin Dashboard</a>
+    </aside>
+
+    <main class="main">
+      <div id="panel" class="card">
+        <!-- Tab content injected here -->
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+const API_BASE = "http://localhost:5000";
+
+// ===== Session guard =====
+const session = JSON.parse(localStorage.getItem('jb_session')||'null');
+if(!session){ alert('Please login'); window.location='login.html'; }
+document.getElementById('welcome').innerHTML = '<div style="font-weight:800">Welcome, '+session.name+'</div><div style="color:var(--muted)">Role: '+session.role+'</div>';
+if(session.role!=='admin') document.getElementById('adminLink').style.display='none';
+
+// ===== Logout =====
+document.getElementById('logoutBtn').addEventListener('click', ()=>{ localStorage.removeItem('jb_session'); window.location='index.html'; });
+
+// ===== Tabs =====
+const panel = document.getElementById('panel');
+const tabs = document.querySelectorAll('.tabBtn');
+let activeTab = 'jobs';
+let prevJobs=[], prevMembers=[], prevOffers=[];
+
+tabs.forEach(t=>t.addEventListener('click', ()=>activateTab(t.dataset.tab)));
+activateTab(activeTab);
+
+// Auto-refresh every 5s
+setInterval(()=>{ activateTab(activeTab); }, 5000);
+
+async function activateTab(name){
+  activeTab = name;
+  tabs.forEach(t=>t.style.background='transparent');
+  document.querySelector('[data-tab="'+name+'"]').style.background='#eef9f8';
+  
+  if(name==='jobs') await renderJobsTab();
+  if(name==='members') await renderMembersTab();
+  if(name==='offers') await renderOffersTab();
+}
+
+// ===== Render Jobs =====
+async function renderJobsTab(){
+  try{
+    const res = await fetch(`${API_BASE}/api/jobs`);
+    const jobs = await res.json();
+    panel.innerHTML = '<h3>Available Jobs</h3><div style="margin-top:8px;color:var(--muted)">Click a job for details.</div>';
+    const grid = document.createElement('div'); grid.className='jobs-grid';
+    jobs.forEach(j=>{
+      const card = document.createElement('div'); 
+      card.className='job-card';
+      card.innerHTML = `<div style="font-weight:800">${j.title}</div>
+        <div style="color:var(--muted)">${j.company} • ${j.location}</div>
+        <div style="margin-top:8px"><span class="badge">${j.category}</span></div>`;
+      card.onclick = ()=> window.location='job.html?id='+j.id;
+
+      if(!prevJobs.find(p=>p.id===j.id)){
+        card.classList.add('flash');
+      }
+
+      grid.appendChild(card);
+    });
+    panel.appendChild(grid);
+    prevJobs = jobs;
+  }catch(err){ console.error(err); panel.innerHTML='<p>Failed to load jobs</p>'; }
+}
+
+// ===== Render Members =====
+async function renderMembersTab(){
+  try{
+    const res = await fetch(`${API_BASE}/api/members`);
+    const members = await res.json();
+    panel.innerHTML = '<h3>Members</h3>';
+    const grid = document.createElement('div'); grid.className='members-grid';
+    members.forEach(m=>{
+      const card = document.createElement('div'); card.className='member-card';
+      card.innerHTML = `<strong>${m.name}</strong> <span style="color:var(--muted)">— ${m.role||'member'}</span>`;
+      if(!prevMembers.find(p=>p.id===m.id)){
+        card.classList.add('flash');
+      }
+      grid.appendChild(card);
+    });
+    panel.appendChild(grid);
+    prevMembers = members;
+  }catch(err){ console.error(err); panel.innerHTML='<p>Failed to load members</p>'; }
+}
+
+// ===== Render Offers =====
+async function renderOffersTab(){
+  try{
+    const res = await fetch(`${API_BASE}/api/offers`);
+    const offers = await res.json();
+    panel.innerHTML = '<h3>Offers</h3>';
+    const grid = document.createElement('div'); grid.className='offers-grid';
+    offers.forEach(o=>{
+      const card = document.createElement('div'); card.className='offer-card';
+      card.innerHTML = `<div style="font-weight:800">${o.title}</div>
+        <div style="color:var(--muted)">${o.description}</div>
+        <div style="margin-top:8px"><strong>Price:</strong> ${o.price}</div>`;
+      if(!prevOffers.find(p=>p.id===o.id)){
+        card.classList.add('flash');
+      }
+      grid.appendChild(card);
+    });
+    panel.appendChild(grid);
+    prevOffers = offers;
+  }catch(err){ console.error(err); panel.innerHTML='<p>Failed to load offers</p>'; }
+}
+</script>
+</body>
+</html>
+

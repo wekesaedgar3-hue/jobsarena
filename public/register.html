@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Register — JobBoard</title>
+<style>
+  :root{--accent:#0ea5a4;--muted:#6b7280}
+  *{box-sizing:border-box} 
+  body{font-family:Inter,system-ui,Arial;background:#f6f8fb;margin:0;color:#0f172a}
+  .wrap{max-width:520px;margin:80px auto;padding:20px}
+  .card{background:#fff;padding:22px;border-radius:12px;box-shadow:0 8px 30px rgba(2,6,23,0.06)}
+  h1{margin-bottom:8px} 
+  p{color:var(--muted);margin-bottom:18px}
+  label{font-size:13px;margin-bottom:6px;display:block}
+  input, select{width:100%;padding:10px;border-radius:8px;border:1px solid #e6eef2;margin-bottom:12px}
+  .btn{padding:10px 14px;border-radius:10px;background:var(--accent);color:#fff;border:none;font-weight:700;cursor:pointer}
+  .small{font-size:13px;color:var(--muted);margin-top:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>Create an account</h1>
+    <p>Choose your role — Job Seeker, Employer, or Admin.</p>
+    <form id="regForm">
+      <label>Full name<input id="name" required/></label>
+      <label>Email<input id="email" type="email" required/></label>
+      <label>Password<input id="password" type="password" required/></label>
+      <label>Role
+        <select id="role">
+          <option value="seeker">Job Seeker</option>
+          <option value="employer">Employer</option>
+          <option value="admin">Admin</option>
+        </select>
+      </label>
+      <button class="btn" type="submit">Register</button>
+    </form>
+
+    <div class="small">Already registered? <a href="login.html">Login</a></div>
+  </div>
+</div>
+
+<script>
+  const API_BASE = "http://localhost:5000";
+
+  document.getElementById('regForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const name = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim().toLowerCase();
+    const password = document.getElementById('password').value;
+    const role = document.getElementById('role').value;
+
+    if (!name || !email || !password) {
+      alert('Complete all fields');
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password, role })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Registration failed");
+
+      alert("✅ Registered successfully. Please login.");
+      window.location = "login.html";
+    } catch (err) {
+      alert("❌ " + err.message);
+    }
+  });
+</script>
+</body>
+</html>
+
