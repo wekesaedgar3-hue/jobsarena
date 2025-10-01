@@ -4,11 +4,11 @@ const dotenv = require("dotenv");
 const path = require("path");
 const jwt = require("jsonwebtoken");
 const sequelize = require("./config/db");
-const authRoutes = require("./routes/auth");
-const jobRoutes = require("./routes/jobs");
-const memberRoutes = require("./routes/members");
-const offerRoutes = require("./routes/offers");
-const popupRoutes = require("./routes/popups");
+
+// Sequelize models
+const Job = require("./models/Job");
+const Member = require("./models/Member");
+const Offer = require("./models/Offer");
 
 // Load environment variables
 dotenv.config();
@@ -34,58 +34,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "public"))); // serve frontend files
 
 // ========================
-// In-memory popups (replace with DB in production)
-// ========================
-let popups = [
-  { id: 1, text: "Welcome to JobBoard!", enabled: true },
-  { id: 2, text: "New IT jobs available now.", enabled: true },
-];
-
-// ========================
-// Routes
-// ========================
-
-// Test route
-app.get("/api/health", (req, res) => {
-  res.json({ status: "Server is running" });
-});
-
-// Popups routes
-app.get("/api/popups", (req, res) => {
-  res.json(popups);
-});
-
-app.post("/api/popups", (req, res) => {
-  const { text, enabled } = req.body;
-  if (!text) return res.status(400).json({ error: "Text is required" });
-  const newPopup = { id: Date.now(), text, enabled: enabled ?? true };
-  popups.push(newPopup);
-  res.json(newPopup);
-});
-
-// Jobs route example
-let jobs = [
-  { id: 1, title: "Senior Nurse", company: "Kenya Medical", location: "Nairobi", category: "Medical" },
-  { id: 2, title: "Mechanical Technician", company: "AutoCare", location: "Mombasa", category: "Mechanics" },
-  { id: 3, title: "Housekeeping Supervisor", company: "ComfortStay Hotels", location: "", category: "Housekeeping" },
-];
-
-app.get("/api/jobs", (req, res) => {
-  res.json(jobs);
-});
-
-// Admin login route (simple example)
-app.post("/api/admin-login", (req, res) => {
-  const { username, password } = req.body;
-  if (username === "admin" && password === "admin123") {
-    res.json({ token: "fake-jwt-token", role: "admin" });
-  } else {
-    res.status(401).json({ error: "Invalid credentials" });
-  }
-});
-
-// ========================
-// Optional: JWT auth middleware
+// JWT auth middleware
 // ========================
 function verifyToken(req, res, next) {
   const token = req.headers["authorization"]?.split(" ")[1];
@@ -105,50 +54,157 @@ function adminOnly(req, res, next) {
 }
 
 // ========================
-// Additional routes from Sequelize models (optional)
+// Routes
 // ========================
-app.use("/api/auth", authRoutes);
-app.use("/api/jobs", jobRoutes);
-app.use("/api/members", memberRoutes);
-app.use("/api/offers", offerRoutes);
-app.use("/api/popups", popupRoutes);
+
+// Health check
+app.get("/api/health", (req, res) => {
+  res.json({ status: "Server is running" });
+});
 
 // ========================
-// Catch-all route to serve frontend index.html
+// Jobs
 // ========================
-app.use((req, res, next) => {
+
+// GET all jobs
+app.get("/api/jobs", async (req, res) => {
+  try {
+    const jobs = await Job.findAll({ order: [["createdAt", "DESC"]] });
+    res.json(jobs);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to fetch jobs" });
+  }
+});
+
+// POST new job (admin only)
+app.post("/api/jobs", verifyToken, adminOnly, async (req, res) => {
+  try {
+    const { title, company, category, location, description } = req.body;
+    if (!title || !company || !category)
+      return res.status(400).json({ message: "Title, company, and category are required" });
+
+    const newJob = await Job.create({ title, company, category, location, description });
+    res.json(newJob);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to add job" });
+  }
+});
+
+// ========================
+// Members
+// ========================
+
+// GET all members
+app.get("/api/members", async (req, res) => {
+  try {
+    const members = await Member.findAll({ order: [["createdAt", "DESC"]] });
+    res.json(members);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to fetch members" });
+  }
+});
+
+// POST new member (admin only)
+app.post("/api/members", verifyToken, adminOnly, async (req, res) => {
+  try {
+    const { name, role } = req.body;
+    if (!name) return res.status(400).json({ message: "Name is required" });
+
+    const newMember = await Member.create({ name, role: role || "member" });
+    res.json(newMember);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to add member" });
+  }
+});
+
+// ========================
+// Offers
+// ========================
+
+// GET all offers
+app.get("/api/offers", async (req, res) => {
+  try {
+    const offers = await Offer.findAll({ order: [["createdAt", "DESC"]] });
+    res.json(offers);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to fetch offers" });
+  }
+});
+
+// POST new offer (admin only)
+app.post("/api/offers", verifyToken, adminOnly, async (req, res) => {
+  try {
+    const { title, price, description } = req.body;
+    if (!title || !price) return res.status(400).json({ message: "Title and price are required" });
+
+    const newOffer = await Offer.create({ title, price, description });
+    res.json(newOffer);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to add offer" });
+  }
+});
+
+// ========================
+// Popups (in-memory example, replace with DB if needed)
+// ========================
+let popups = [
+  { id: 1, text: "Welcome to JobBoard!", enabled: true },
+  { id: 2, text: "New IT jobs available now.", enabled: true },
+];
+
+app.get("/api/popups", (req, res) => res.json(popups));
+
+app.post("/api/popups", verifyToken, adminOnly, (req, res) => {
+  const { text, enabled } = req.body;
+  if (!text) return res.status(400).json({ error: "Text is required" });
+  const newPopup = { id: Date.now(), text, enabled: enabled ?? true };
+  popups.push(newPopup);
+  res.json(newPopup);
+});
+
+// ========================
+// Admin login (demo)
+// ========================
+app.post("/api/admin-login", (req, res) => {
+  const { username, password } = req.body;
+  if (username === "admin" && password === "admin123") {
+    const token = jwt.sign({ username, role: "admin" }, process.env.JWT_SECRET, { expiresIn: "8h" });
+    res.json({ token, role: "admin" });
+  } else {
+    res.status(401).json({ error: "Invalid credentials" });
+  }
+});
+
+// ========================
+// Catch-all route to serve frontend
+// ========================
+app.use((req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 // ========================
-// Database connection + server start
+// Start server + DB connection
 // ========================
 (async () => {
   try {
     await sequelize.authenticate();
     console.log("✅ Database connected successfully.");
 
-    // Fix ENUM role issues automatically
-    await sequelize.query(`
-      ALTER TABLE "Users"
-        ALTER COLUMN "role" TYPE VARCHAR(255) USING role::text;
-      ALTER TABLE "Users"
-        ALTER COLUMN "role" SET DEFAULT 'seeker';
-      ALTER TABLE "Users"
-        ALTER COLUMN "role" DROP NOT NULL;
-    `);
-    console.log("✅ Users.role column updated");
-
     // Sync models
     await sequelize.sync({ alter: true });
 
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running at http://localhost:${PORT}`);
-    });
+    app.listen(PORT, () => console.log(`🚀 Server running at http://localhost:${PORT}`));
   } catch (err) {
     console.error("❌ Unable to connect to the database:", err);
   }
 })();
+
 
 
 
