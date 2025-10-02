@@ -1,87 +1,3 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Admin — JobBoard</title>
-<style>
-  :root{--accent:#0ea5a4;--muted:#6b7280}
-  *{box-sizing:border-box} 
-  body{font-family:Inter,Arial;background:#f6f8fb;margin:0;color:#0f172a}
-  .top{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:#fff;box-shadow:0 6px 20px rgba(2,6,23,0.06)}
-  .wrap{max-width:1100px;margin:18px auto;padding:10px}
-  .cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  .card{background:#fff;padding:14px;border-radius:12px;box-shadow:0 10px 30px rgba(2,6,23,0.06);margin-bottom:16px}
-  input,textarea,select{width:100%;padding:10px;border-radius:8px;border:1px solid #eef6f5;margin-top:8px}
-  .btn{padding:8px 12px;border-radius:8px;background:var(--accent);color:#fff;border:none;margin-top:8px;cursor:pointer}
-  .danger{background:#ef4444}
-  .list-item{display:flex;justify-content:space-between;align-items:center;background:#f9fafb;padding:8px;border-radius:8px;margin-top:6px}
-  .list-item span{flex:1;margin-right:10px}
-  .actions button{margin-left:6px}
-  @media(max-width:900px){.cols{grid-template-columns:1fr}}
-</style>
-</head>
-<body>
-<div class="top">
-  <div style="font-weight:800;color:var(--accent)">Admin Dashboard</div>
-  <div><a href="index.html">View site</a></div>
-</div>
-<div class="wrap">
-  <div class="cols">
-    <!-- Add Job -->
-    <div class="card">
-      <h3>Add Job</h3>
-      <form id="jobForm">
-        <label>Title<input id="jt" required /></label>
-        <label>Company<input id="jc" required /></label>
-        <label>Category<select id="jcat">
-          <option>Housekeeping</option><option>Mechanics</option><option>Medical</option><option>Engineering</option>
-        </select></label>
-        <label>Location<input id="jloc" /></label>
-        <label>Description<textarea id="jdesc"></textarea></label>
-        <button class="btn" type="submit">Add Job</button>
-      </form>
-      <h4 style="margin-top:14px">Existing Jobs</h4>
-      <div id="jobsList"></div>
-    </div>
-
-    <!-- Add Member + Offer -->
-    <div class="card">
-      <h3>Add Member</h3>
-      <form id="memberForm">
-        <label>Name<input id="mname" required /></label>
-        <label>Role<input id="mrole" placeholder="example: recruiter"/></label>
-        <button class="btn" type="submit">Add Member</button>
-      </form>
-      <h4 style="margin-top:14px">Existing Members</h4>
-      <div id="membersList"></div>
-
-      <hr style="margin:12px 0"/>
-      <h3>Add Offer</h3>
-      <form id="offerForm">
-        <label>Title<input id="ot" required /></label>
-        <label>Price<input id="op" required /></label>
-        <label>Description<textarea id="od"></textarea></label>
-        <button class="btn" type="submit">Add Offer</button>
-      </form>
-      <h4 style="margin-top:14px">Existing Offers</h4>
-      <div id="offersList"></div>
-    </div>
-  </div>
-
-  <!-- Popups -->
-  <div class="card">
-    <h3>Manage Popups</h3>
-    <form id="popupForm">
-      <label>Popup Text<textarea id="popupText" required></textarea></label>
-      <label style="display:block;margin-top:8px"><input type="checkbox" id="popupEnabled" /> Enable popup</label>
-      <button class="btn" type="submit">Add Popup</button>
-    </form>
-    <h4 style="margin-top:14px">Existing Popups</h4>
-    <div id="popupList"></div>
-  </div>
-</div>
-
 <script>
 // ✅ Dynamic API base
 const API_BASE = window.location.hostname === "localhost"
@@ -106,13 +22,22 @@ async function apiFetch(endpoint, options = {}) {
       ...(options.headers || {})
     }
   });
-  if (!res.ok) throw new Error((await res.json()).message || "Request failed");
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || `Request failed (${res.status})`);
+  }
   return res.json();
 }
 
 // ===== Add Job =====
 document.getElementById("jobForm").addEventListener("submit", async (e) => {
   e.preventDefault();
+  const jt = document.getElementById("jt");
+  const jc = document.getElementById("jc");
+  const jcat = document.getElementById("jcat");
+  const jloc = document.getElementById("jloc");
+  const jdesc = document.getElementById("jdesc");
+
   try {
     await apiFetch("jobs", {
       method: "POST",
@@ -127,12 +52,18 @@ document.getElementById("jobForm").addEventListener("submit", async (e) => {
     alert("✅ Job added successfully");
     e.target.reset();
     renderJobs();
-  } catch (err) { alert("❌ " + err.message); }
+  } catch (err) { 
+    console.error("Add job error:", err); 
+    alert("❌ " + err.message); 
+  }
 });
 
 // ===== Add Member =====
 document.getElementById("memberForm").addEventListener("submit", async (e) => {
   e.preventDefault();
+  const mname = document.getElementById("mname");
+  const mrole = document.getElementById("mrole");
+
   try {
     await apiFetch("members", {
       method: "POST",
@@ -144,12 +75,19 @@ document.getElementById("memberForm").addEventListener("submit", async (e) => {
     alert("✅ Member added successfully");
     e.target.reset();
     renderMembers();
-  } catch (err) { alert("❌ " + err.message); }
+  } catch (err) { 
+    console.error("Add member error:", err); 
+    alert("❌ " + err.message); 
+  }
 });
 
 // ===== Add Offer =====
 document.getElementById("offerForm").addEventListener("submit", async (e) => {
   e.preventDefault();
+  const ot = document.getElementById("ot");
+  const op = document.getElementById("op");
+  const od = document.getElementById("od");
+
   try {
     await apiFetch("offers", {
       method: "POST",
@@ -162,7 +100,10 @@ document.getElementById("offerForm").addEventListener("submit", async (e) => {
     alert("✅ Offer added successfully");
     e.target.reset();
     renderOffers();
-  } catch (err) { alert("❌ " + err.message); }
+  } catch (err) { 
+    console.error("Add offer error:", err); 
+    alert("❌ " + err.message); 
+  }
 });
 
 // ===== Render Data =====
@@ -172,7 +113,10 @@ async function renderJobs() {
     jobsList.innerHTML = jobs.map(j =>
       `<div class="list-item"><span>${j.title} @ ${j.company}</span></div>`
     ).join("") || "<p style='color:var(--muted)'>No jobs yet.</p>";
-  } catch (err) { jobsList.innerHTML = "<p>Error loading jobs</p>"; }
+  } catch (err) { 
+    console.error("Render jobs error:", err);
+    jobsList.innerHTML = "<p>Error loading jobs</p>"; 
+  }
 }
 async function renderMembers() {
   try {
@@ -180,7 +124,10 @@ async function renderMembers() {
     membersList.innerHTML = members.map(m =>
       `<div class="list-item"><span>${m.name} (${m.role})</span></div>`
     ).join("") || "<p style='color:var(--muted)'>No members yet.</p>";
-  } catch (err) { membersList.innerHTML = "<p>Error loading members</p>"; }
+  } catch (err) { 
+    console.error("Render members error:", err);
+    membersList.innerHTML = "<p>Error loading members</p>"; 
+  }
 }
 async function renderOffers() {
   try {
@@ -188,7 +135,10 @@ async function renderOffers() {
     offersList.innerHTML = offers.map(o =>
       `<div class="list-item"><span>${o.title} — $${o.price}</span></div>`
     ).join("") || "<p style='color:var(--muted)'>No offers yet.</p>";
-  } catch (err) { offersList.innerHTML = "<p>Error loading offers</p>"; }
+  } catch (err) { 
+    console.error("Render offers error:", err);
+    offersList.innerHTML = "<p>Error loading offers</p>"; 
+  }
 }
 async function renderPopups() {
   try {
@@ -196,7 +146,10 @@ async function renderPopups() {
     popupList.innerHTML = popups.map(p =>
       `<div class="list-item"><span>${p.text} ${p.enabled?'✅':''}</span></div>`
     ).join("") || "<p style='color:var(--muted)'>No popups yet.</p>";
-  } catch (err) { popupList.innerHTML = "<p>Error loading popups</p>"; }
+  } catch (err) { 
+    console.error("Render popups error:", err);
+    popupList.innerHTML = "<p>Error loading popups</p>"; 
+  }
 }
 
 // ===== Init =====
@@ -205,8 +158,7 @@ renderMembers();
 renderOffers();
 renderPopups();
 </script>
-</body>
-</html>
+
 
 
 
