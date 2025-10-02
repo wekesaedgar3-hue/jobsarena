@@ -1,5 +1,4 @@
 <script>
-// ✅ Dynamic API base
 const API_BASE = window.location.hostname === "localhost"
   ? "http://localhost:5000"
   : "https://jobsarena.onrender.com";
@@ -7,13 +6,15 @@ const API_BASE = window.location.hostname === "localhost"
 // ===== Session guard =====
 const session = JSON.parse(localStorage.getItem('jb_session')||'null');
 if(!session){ alert('Please login'); window.location='login.html'; }
-document.getElementById('welcome').innerHTML = '<div style="font-weight:800">Welcome, '+session.name+'</div><div style="color:var(--muted)">Role: '+session.role+'</div>';
+document.getElementById('welcome').innerHTML =
+  `<div style="font-weight:800">Welcome, ${session.name}</div>
+   <div style="color:var(--muted)">Role: ${session.role}</div>`;
 if(session.role!=='admin') document.getElementById('adminLink').style.display='none';
 
 // ===== Logout =====
-document.getElementById('logoutBtn').addEventListener('click', ()=>{ 
-  localStorage.removeItem('jb_session'); 
-  window.location='index.html'; 
+document.getElementById('logoutBtn').addEventListener('click', ()=>{
+  localStorage.removeItem('jb_session');
+  window.location='index.html';
 });
 
 // ===== Tabs =====
@@ -21,26 +22,25 @@ const panel = document.getElementById('panel');
 const tabs = document.querySelectorAll('.tabBtn');
 let activeTab = 'jobs', prevJobs=[], prevMembers=[], prevOffers=[];
 
-// ✅ Missing function to activate tab
-function activateTab(tab){
+// ✅ Activate tab function
+function activateTab(tab) {
   activeTab = tab;
-  if(tab === 'jobs') renderJobsTab();
-  if(tab === 'members') renderMembersTab();
-  if(tab === 'offers') renderOffersTab();
+  if (tab === "jobs") renderJobsTab();
+  if (tab === "members") renderMembersTab();
+  if (tab === "offers") renderOffersTab();
 }
 
 tabs.forEach(t=>t.addEventListener('click', ()=>activateTab(t.dataset.tab)));
-
-// Load first tab immediately
 activateTab(activeTab);
-// Refresh every 5s
 setInterval(()=> activateTab(activeTab), 5000);
 
 // ===== Render Jobs =====
 async function renderJobsTab(){
   try{
     const res = await fetch(`${API_BASE}/api/jobs`);
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
     const jobs = await res.json();
+    console.log("Fetched jobs:", jobs);
     panel.innerHTML = '<h3>Available Jobs</h3>';
     const grid = document.createElement('div'); grid.className='jobs-grid';
     jobs.forEach(j=>{
@@ -54,14 +54,19 @@ async function renderJobsTab(){
     });
     panel.appendChild(grid);
     prevJobs = jobs;
-  }catch(err){ console.error(err); panel.innerHTML='<p>Failed to load jobs</p>'; }
+  }catch(err){
+    console.error("Error loading jobs:", err);
+    panel.innerHTML = `<p style="color:red">Failed to load jobs: ${err.message}</p>`;
+  }
 }
 
 // ===== Render Members =====
 async function renderMembersTab(){
   try{
     const res = await fetch(`${API_BASE}/api/members`);
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
     const members = await res.json();
+    console.log("Fetched members:", members);
     panel.innerHTML = '<h3>Members</h3>';
     const grid = document.createElement('div'); grid.className='members-grid';
     members.forEach(m=>{
@@ -72,14 +77,19 @@ async function renderMembersTab(){
     });
     panel.appendChild(grid);
     prevMembers = members;
-  }catch(err){ console.error(err); panel.innerHTML='<p>Failed to load members</p>'; }
+  }catch(err){
+    console.error("Error loading members:", err);
+    panel.innerHTML = `<p style="color:red">Failed to load members: ${err.message}</p>`;
+  }
 }
 
 // ===== Render Offers =====
 async function renderOffersTab(){
   try{
     const res = await fetch(`${API_BASE}/api/offers`);
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
     const offers = await res.json();
+    console.log("Fetched offers:", offers);
     panel.innerHTML = '<h3>Offers</h3>';
     const grid = document.createElement('div'); grid.className='offers-grid';
     offers.forEach(o=>{
@@ -92,7 +102,11 @@ async function renderOffersTab(){
     });
     panel.appendChild(grid);
     prevOffers = offers;
-  }catch(err){ console.error(err); panel.innerHTML='<p>Failed to load offers</p>'; }
+  }catch(err){
+    console.error("Error loading offers:", err);
+    panel.innerHTML = `<p style="color:red">Failed to load offers: ${err.message}</p>`;
+  }
 }
 </script>
+
 
