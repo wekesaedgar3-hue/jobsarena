@@ -199,13 +199,12 @@ app.use((req, res) => {
     // Sync models
     await sequelize.sync({ alter: true });
 
-    app.listen(PORT, () => console.log(`🚀 Server running at http://localhost:${PORT}`));
+    // ✅ Use Render’s dynamic port and bind to 0.0.0.0
+    app.listen(PORT, "0.0.0.0", () =>
+      console.log(`🚀 Server running at http://localhost:${PORT}`)
+    );
   } catch (err) {
     console.error("❌ Unable to connect to the database:", err);
   }
 })();
-
-
-
-
 
