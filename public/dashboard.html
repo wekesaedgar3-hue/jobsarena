@@ -1,112 +1,95 @@
-<script>
-const API_BASE = window.location.hostname === "localhost"
-  ? "http://localhost:5000"
-  : "https://jobsarena.onrender.com";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Dashboard - JobsArena</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f8f9fa; }
+    h1 { color: #222; }
+    #welcome { margin-bottom: 15px; font-weight: bold; }
+    .container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 20px; }
+    .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .card h2 { margin-top: 0; font-size: 20px; border-bottom: 2px solid #eee; padding-bottom: 5px; }
+    ul { padding-left: 20px; }
+    li { margin-bottom: 8px; }
+    .empty { color: gray; font-style: italic; }
+    button { margin-top: 15px; padding: 8px 15px; border: none; border-radius: 6px; background: crimson; color: white; cursor: pointer; }
+    button:hover { background: darkred; }
+  </style>
+</head>
+<body>
+  <h1>User Dashboard</h1>
+  <div id="welcome"></div>
+  <button id="logoutBtn">Logout</button>
 
-// ===== Session guard =====
-const session = JSON.parse(localStorage.getItem('jb_session')||'null');
-if(!session){ alert('Please login'); window.location='login.html'; }
-document.getElementById('welcome').innerHTML =
-  `<div style="font-weight:800">Welcome, ${session.name}</div>
-   <div style="color:var(--muted)">Role: ${session.role}</div>`;
-if(session.role!=='admin') document.getElementById('adminLink').style.display='none';
+  <div class="container">
+    <div class="card">
+      <h2>Available Jobs</h2>
+      <ul id="jobs-list"></ul>
+    </div>
+    <div class="card">
+      <h2>Members</h2>
+      <ul id="members-list"></ul>
+    </div>
+    <div class="card">
+      <h2>Offers</h2>
+      <ul id="offers-list"></ul>
+    </div>
+  </div>
 
-// ===== Logout =====
-document.getElementById('logoutBtn').addEventListener('click', ()=>{
-  localStorage.removeItem('jb_session');
-  window.location='index.html';
-});
+  <script>
+    const API_BASE = "https://jobsarena.onrender.com"; // ✅ your backend URL
+    const session = JSON.parse(localStorage.getItem("jb_session") || "null");
 
-// ===== Tabs =====
-const panel = document.getElementById('panel');
-const tabs = document.querySelectorAll('.tabBtn');
-let activeTab = 'jobs', prevJobs=[], prevMembers=[], prevOffers=[];
+    if (!session) {
+      alert("You must log in first!");
+      window.location.href = "login.html";
+    }
 
-// ✅ Activate tab function
-function activateTab(tab) {
-  activeTab = tab;
-  if (tab === "jobs") renderJobsTab();
-  if (tab === "members") renderMembersTab();
-  if (tab === "offers") renderOffersTab();
-}
+    document.getElementById("welcome").textContent = `Welcome, ${session.name} (${session.role})`;
 
-tabs.forEach(t=>t.addEventListener('click', ()=>activateTab(t.dataset.tab)));
-activateTab(activeTab);
-setInterval(()=> activateTab(activeTab), 5000);
-
-// ===== Render Jobs =====
-async function renderJobsTab(){
-  try{
-    const res = await fetch(`${API_BASE}/api/jobs`);
-    if(!res.ok) throw new Error(`HTTP ${res.status}`);
-    const jobs = await res.json();
-    console.log("Fetched jobs:", jobs);
-    panel.innerHTML = '<h3>Available Jobs</h3>';
-    const grid = document.createElement('div'); grid.className='jobs-grid';
-    jobs.forEach(j=>{
-      const card = document.createElement('div'); card.className='job-card';
-      card.innerHTML = `<div style="font-weight:800">${j.title}</div>
-        <div style="color:var(--muted)">${j.company} • ${j.location}</div>
-        <div style="margin-top:8px"><span class="badge">${j.category}</span></div>`;
-      card.onclick = ()=> window.location='job.html?id='+j.id;
-      if(!prevJobs.find(p=>p.id===j.id)) card.classList.add('flash');
-      grid.appendChild(card);
+    // ===== Logout =====
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      localStorage.removeItem("jb_session");
+      window.location.href = "index.html";
     });
-    panel.appendChild(grid);
-    prevJobs = jobs;
-  }catch(err){
-    console.error("Error loading jobs:", err);
-    panel.innerHTML = `<p style="color:red">Failed to load jobs: ${err.message}</p>`;
-  }
-}
 
-// ===== Render Members =====
-async function renderMembersTab(){
-  try{
-    const res = await fetch(`${API_BASE}/api/members`);
-    if(!res.ok) throw new Error(`HTTP ${res.status}`);
-    const members = await res.json();
-    console.log("Fetched members:", members);
-    panel.innerHTML = '<h3>Members</h3>';
-    const grid = document.createElement('div'); grid.className='members-grid';
-    members.forEach(m=>{
-      const card = document.createElement('div'); card.className='member-card';
-      card.innerHTML = `<strong>${m.name}</strong> <span style="color:var(--muted)">— ${m.role||'member'}</span>`;
-      if(!prevMembers.find(p=>p.id===m.id)) card.classList.add('flash');
-      grid.appendChild(card);
-    });
-    panel.appendChild(grid);
-    prevMembers = members;
-  }catch(err){
-    console.error("Error loading members:", err);
-    panel.innerHTML = `<p style="color:red">Failed to load members: ${err.message}</p>`;
-  }
-}
+    // Helper function to render list
+    function renderList(elementId, data, formatter) {
+      const container = document.getElementById(elementId);
+      if (!data || data.length === 0) {
+        container.innerHTML = "<li class='empty'>No records available</li>";
+      } else {
+        container.innerHTML = "";
+        data.forEach(item => {
+          const li = document.createElement("li");
+          li.textContent = formatter(item);
+          container.appendChild(li);
+        });
+      }
+    }
 
-// ===== Render Offers =====
-async function renderOffersTab(){
-  try{
-    const res = await fetch(`${API_BASE}/api/offers`);
-    if(!res.ok) throw new Error(`HTTP ${res.status}`);
-    const offers = await res.json();
-    console.log("Fetched offers:", offers);
-    panel.innerHTML = '<h3>Offers</h3>';
-    const grid = document.createElement('div'); grid.className='offers-grid';
-    offers.forEach(o=>{
-      const card = document.createElement('div'); card.className='offer-card';
-      card.innerHTML = `<div style="font-weight:800">${o.title}</div>
-        <div style="color:var(--muted)">${o.description}</div>
-        <div style="margin-top:8px"><strong>Price:</strong> ${o.price}</div>`;
-      if(!prevOffers.find(p=>p.id===o.id)) card.classList.add('flash');
-      grid.appendChild(card);
-    });
-    panel.appendChild(grid);
-    prevOffers = offers;
-  }catch(err){
-    console.error("Error loading offers:", err);
-    panel.innerHTML = `<p style="color:red">Failed to load offers: ${err.message}</p>`;
-  }
-}
-</script>
+    // Fetch Jobs
+    fetch(`${API_BASE}/api/jobs`)
+      .then(res => res.json())
+      .then(data => renderList("jobs-list", data, job => `${job.title} - ${job.company}`))
+      .catch(err => console.error("Error fetching jobs:", err));
+
+    // Fetch Members
+    fetch(`${API_BASE}/api/members`)
+      .then(res => res.json())
+      .then(data => renderList("members-list", data, member => `${member.name} (${member.email})`))
+      .catch(err => console.error("Error fetching members:", err));
+
+    // Fetch Offers
+    fetch(`${API_BASE}/api/offers`)
+      .then(res => res.json())
+      .then(data => renderList("offers-list", data, offer => `${offer.title} - ${offer.description}`))
+      .catch(err => console.error("Error fetching offers:", err));
+  </script>
+</body>
+</html>
+
 
 
