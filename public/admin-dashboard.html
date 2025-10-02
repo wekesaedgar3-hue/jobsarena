@@ -1,163 +1,121 @@
-<script>
-// ✅ Dynamic API base
-const API_BASE = window.location.hostname === "localhost"
-  ? "http://localhost:5000"
-  : "https://jobsarena.onrender.com";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard - JobsArena</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin:20px; }
+    .list-item { padding:8px; border-bottom:1px solid #ddd; }
+    .list { margin-bottom:20px; }
+  </style>
+</head>
+<body>
+  <h1>Admin Dashboard</h1>
 
-// ===== Admin guard =====
-const session = JSON.parse(localStorage.getItem("jb_session") || "null");
-if (!session || !session.user || session.user.role !== "admin") {
-  alert("Admin only — please login as admin");
-  window.location = "login.html";
-}
-const token = session.token;
+  <h2>Jobs</h2>
+  <div id="jobsList" class="list"></div>
 
-// Helper fetch wrapper
-async function apiFetch(endpoint, options = {}) {
-  const res = await fetch(`${API_BASE}/api/${endpoint}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`,
-      ...(options.headers || {})
+  <h2>Members</h2>
+  <div id="membersList" class="list"></div>
+
+  <h2>Offers</h2>
+  <div id="offersList" class="list"></div>
+
+  <h2>Popups</h2>
+  <div id="popupList" class="list"></div>
+
+  <script>
+    // ✅ Dynamic API base
+    const API_BASE = window.location.hostname === "localhost"
+      ? "http://localhost:5000"
+      : "https://jobsarena.onrender.com";
+
+    // ===== Admin guard =====
+    const session = JSON.parse(localStorage.getItem("jb_session") || "null");
+    if (!session || !session.user || session.user.role !== "admin") {
+      alert("Admin only — please login as admin");
+      window.location = "login.html";
     }
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || `Request failed (${res.status})`);
-  }
-  return res.json();
-}
+    const token = session.token;
 
-// ===== Add Job =====
-document.getElementById("jobForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const jt = document.getElementById("jt");
-  const jc = document.getElementById("jc");
-  const jcat = document.getElementById("jcat");
-  const jloc = document.getElementById("jloc");
-  const jdesc = document.getElementById("jdesc");
+    // ===== DOM Elements =====
+    const jobsList = document.getElementById("jobsList");
+    const membersList = document.getElementById("membersList");
+    const offersList = document.getElementById("offersList");
+    const popupList = document.getElementById("popupList");
 
-  try {
-    await apiFetch("jobs", {
-      method: "POST",
-      body: JSON.stringify({
-        title: jt.value.trim(),
-        company: jc.value.trim(),
-        category: jcat.value,
-        location: jloc.value.trim(),
-        description: jdesc.value.trim()
-      })
-    });
-    alert("✅ Job added successfully");
-    e.target.reset();
+    // Helper fetch wrapper
+    async function apiFetch(endpoint, options = {}) {
+      const res = await fetch(`${API_BASE}/api/${endpoint}`, {
+        ...options,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+          ...(options.headers || {})
+        }
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || `Request failed (${res.status})`);
+      }
+      return res.json();
+    }
+
+    // ===== Render Data =====
+    async function renderJobs() {
+      try {
+        const jobs = await apiFetch("jobs");
+        jobsList.innerHTML = jobs.map(j =>
+          `<div class="list-item"><span>${j.title} @ ${j.company}</span></div>`
+        ).join("") || "<p style='color:gray'>No jobs yet.</p>";
+      } catch (err) {
+        console.error("Render jobs error:", err);
+        jobsList.innerHTML = "<p style='color:red'>Error loading jobs</p>";
+      }
+    }
+    async function renderMembers() {
+      try {
+        const members = await apiFetch("members");
+        membersList.innerHTML = members.map(m =>
+          `<div class="list-item"><span>${m.name} (${m.role})</span></div>`
+        ).join("") || "<p style='color:gray'>No members yet.</p>";
+      } catch (err) {
+        console.error("Render members error:", err);
+        membersList.innerHTML = "<p style='color:red'>Error loading members</p>";
+      }
+    }
+    async function renderOffers() {
+      try {
+        const offers = await apiFetch("offers");
+        offersList.innerHTML = offers.map(o =>
+          `<div class="list-item"><span>${o.title} — $${o.price}</span></div>`
+        ).join("") || "<p style='color:gray'>No offers yet.</p>";
+      } catch (err) {
+        console.error("Render offers error:", err);
+        offersList.innerHTML = "<p style='color:red'>Error loading offers</p>";
+      }
+    }
+    async function renderPopups() {
+      try {
+        const popups = await apiFetch("popups");
+        popupList.innerHTML = popups.map(p =>
+          `<div class="list-item"><span>${p.text} ${p.enabled?'✅':''}</span></div>`
+        ).join("") || "<p style='color:gray'>No popups yet.</p>";
+      } catch (err) {
+        console.error("Render popups error:", err);
+        popupList.innerHTML = "<p style='color:red'>Error loading popups</p>";
+      }
+    }
+
+    // ===== Init =====
     renderJobs();
-  } catch (err) { 
-    console.error("Add job error:", err); 
-    alert("❌ " + err.message); 
-  }
-});
-
-// ===== Add Member =====
-document.getElementById("memberForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const mname = document.getElementById("mname");
-  const mrole = document.getElementById("mrole");
-
-  try {
-    await apiFetch("members", {
-      method: "POST",
-      body: JSON.stringify({
-        name: mname.value.trim(),
-        role: mrole.value.trim()
-      })
-    });
-    alert("✅ Member added successfully");
-    e.target.reset();
     renderMembers();
-  } catch (err) { 
-    console.error("Add member error:", err); 
-    alert("❌ " + err.message); 
-  }
-});
-
-// ===== Add Offer =====
-document.getElementById("offerForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const ot = document.getElementById("ot");
-  const op = document.getElementById("op");
-  const od = document.getElementById("od");
-
-  try {
-    await apiFetch("offers", {
-      method: "POST",
-      body: JSON.stringify({
-        title: ot.value.trim(),
-        price: op.value.trim(),
-        description: od.value.trim()
-      })
-    });
-    alert("✅ Offer added successfully");
-    e.target.reset();
     renderOffers();
-  } catch (err) { 
-    console.error("Add offer error:", err); 
-    alert("❌ " + err.message); 
-  }
-});
+    renderPopups();
+  </script>
+</body>
+</html>
 
-// ===== Render Data =====
-async function renderJobs() {
-  try {
-    const jobs = await apiFetch("jobs");
-    jobsList.innerHTML = jobs.map(j =>
-      `<div class="list-item"><span>${j.title} @ ${j.company}</span></div>`
-    ).join("") || "<p style='color:var(--muted)'>No jobs yet.</p>";
-  } catch (err) { 
-    console.error("Render jobs error:", err);
-    jobsList.innerHTML = "<p>Error loading jobs</p>"; 
-  }
-}
-async function renderMembers() {
-  try {
-    const members = await apiFetch("members");
-    membersList.innerHTML = members.map(m =>
-      `<div class="list-item"><span>${m.name} (${m.role})</span></div>`
-    ).join("") || "<p style='color:var(--muted)'>No members yet.</p>";
-  } catch (err) { 
-    console.error("Render members error:", err);
-    membersList.innerHTML = "<p>Error loading members</p>"; 
-  }
-}
-async function renderOffers() {
-  try {
-    const offers = await apiFetch("offers");
-    offersList.innerHTML = offers.map(o =>
-      `<div class="list-item"><span>${o.title} — $${o.price}</span></div>`
-    ).join("") || "<p style='color:var(--muted)'>No offers yet.</p>";
-  } catch (err) { 
-    console.error("Render offers error:", err);
-    offersList.innerHTML = "<p>Error loading offers</p>"; 
-  }
-}
-async function renderPopups() {
-  try {
-    const popups = await apiFetch("popups");
-    popupList.innerHTML = popups.map(p =>
-      `<div class="list-item"><span>${p.text} ${p.enabled?'✅':''}</span></div>`
-    ).join("") || "<p style='color:var(--muted)'>No popups yet.</p>";
-  } catch (err) { 
-    console.error("Render popups error:", err);
-    popupList.innerHTML = "<p>Error loading popups</p>"; 
-  }
-}
-
-// ===== Init =====
-renderJobs();
-renderMembers();
-renderOffers();
-renderPopups();
-</script>
 
 
 
