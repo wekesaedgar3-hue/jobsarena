@@ -1,3 +1,4 @@
+// server.js
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
@@ -9,6 +10,9 @@ const sequelize = require("./config/db");
 const Job = require("./models/Job");
 const Member = require("./models/Member");
 const Offer = require("./models/Offer");
+
+// Import routes (FIXED: points to auth.js, not authRoutes.js)
+const authRoutes = require("./routes/auth");
 
 // Load environment variables
 dotenv.config();
@@ -57,6 +61,9 @@ function adminOnly(req, res, next) {
 // Routes
 // ========================
 
+// Auth routes (MUST be before catch-all!)
+app.use("/api/auth", authRoutes);
+
 // Health check
 app.get("/api/health", (req, res) => {
   res.json({ status: "Server is running" });
@@ -65,8 +72,6 @@ app.get("/api/health", (req, res) => {
 // ========================
 // Jobs
 // ========================
-
-// GET all jobs
 app.get("/api/jobs", async (req, res) => {
   try {
     const jobs = await Job.findAll({ order: [["createdAt", "DESC"]] });
@@ -77,14 +82,21 @@ app.get("/api/jobs", async (req, res) => {
   }
 });
 
-// POST new job (admin only)
 app.post("/api/jobs", verifyToken, adminOnly, async (req, res) => {
   try {
     const { title, company, category, location, description } = req.body;
     if (!title || !company || !category)
-      return res.status(400).json({ message: "Title, company, and category are required" });
+      return res
+        .status(400)
+        .json({ message: "Title, company, and category are required" });
 
-    const newJob = await Job.create({ title, company, category, location, description });
+    const newJob = await Job.create({
+      title,
+      company,
+      category,
+      location,
+      description,
+    });
     res.json(newJob);
   } catch (err) {
     console.error(err);
@@ -95,8 +107,6 @@ app.post("/api/jobs", verifyToken, adminOnly, async (req, res) => {
 // ========================
 // Members
 // ========================
-
-// GET all members
 app.get("/api/members", async (req, res) => {
   try {
     const members = await Member.findAll({ order: [["createdAt", "DESC"]] });
@@ -107,7 +117,6 @@ app.get("/api/members", async (req, res) => {
   }
 });
 
-// POST new member (admin only)
 app.post("/api/members", verifyToken, adminOnly, async (req, res) => {
   try {
     const { name, role } = req.body;
@@ -124,8 +133,6 @@ app.post("/api/members", verifyToken, adminOnly, async (req, res) => {
 // ========================
 // Offers
 // ========================
-
-// GET all offers
 app.get("/api/offers", async (req, res) => {
   try {
     const offers = await Offer.findAll({ order: [["createdAt", "DESC"]] });
@@ -136,11 +143,13 @@ app.get("/api/offers", async (req, res) => {
   }
 });
 
-// POST new offer (admin only)
 app.post("/api/offers", verifyToken, adminOnly, async (req, res) => {
   try {
     const { title, price, description } = req.body;
-    if (!title || !price) return res.status(400).json({ message: "Title and price are required" });
+    if (!title || !price)
+      return res
+        .status(400)
+        .json({ message: "Title and price are required" });
 
     const newOffer = await Offer.create({ title, price, description });
     res.json(newOffer);
@@ -174,7 +183,11 @@ app.post("/api/popups", verifyToken, adminOnly, (req, res) => {
 app.post("/api/admin-login", (req, res) => {
   const { username, password } = req.body;
   if (username === "admin" && password === "admin123") {
-    const token = jwt.sign({ username, role: "admin" }, process.env.JWT_SECRET, { expiresIn: "8h" });
+    const token = jwt.sign(
+      { username, role: "admin" },
+      process.env.JWT_SECRET,
+      { expiresIn: "8h" }
+    );
     res.json({ token, role: "admin" });
   } else {
     res.status(401).json({ error: "Invalid credentials" });
@@ -196,10 +209,8 @@ app.use((req, res) => {
     await sequelize.authenticate();
     console.log("✅ Database connected successfully.");
 
-    // Sync models
     await sequelize.sync({ alter: true });
 
-    // ✅ Use Render’s dynamic port and bind to 0.0.0.0
     app.listen(PORT, "0.0.0.0", () =>
       console.log(`🚀 Server running at http://localhost:${PORT}`)
     );
@@ -207,4 +218,5 @@ app.use((req, res) => {
     console.error("❌ Unable to connect to the database:", err);
   }
 })();
+
 
