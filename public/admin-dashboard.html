@@ -28,6 +28,7 @@
 </div>
 <div class="wrap">
   <div class="cols">
+    <!-- Add Job -->
     <div class="card">
       <h3>Add Job</h3>
       <form id="jobForm">
@@ -40,8 +41,11 @@
         <label>Description<textarea id="jdesc"></textarea></label>
         <button class="btn" type="submit">Add Job</button>
       </form>
+      <h4 style="margin-top:14px">Existing Jobs</h4>
+      <div id="jobsList"></div>
     </div>
 
+    <!-- Add Member + Offer -->
     <div class="card">
       <h3>Add Member</h3>
       <form id="memberForm">
@@ -49,6 +53,9 @@
         <label>Role<input id="mrole" placeholder="example: recruiter"/></label>
         <button class="btn" type="submit">Add Member</button>
       </form>
+      <h4 style="margin-top:14px">Existing Members</h4>
+      <div id="membersList"></div>
+
       <hr style="margin:12px 0"/>
       <h3>Add Offer</h3>
       <form id="offerForm">
@@ -57,9 +64,12 @@
         <label>Description<textarea id="od"></textarea></label>
         <button class="btn" type="submit">Add Offer</button>
       </form>
+      <h4 style="margin-top:14px">Existing Offers</h4>
+      <div id="offersList"></div>
     </div>
   </div>
 
+  <!-- Popups -->
   <div class="card">
     <h3>Manage Popups</h3>
     <form id="popupForm">
@@ -86,101 +96,119 @@ if (!session || !session.user || session.user.role !== "admin") {
 }
 const token = session.token;
 
+// Helper fetch wrapper
+async function apiFetch(endpoint, options = {}) {
+  const res = await fetch(`${API_BASE}/api/${endpoint}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+      ...(options.headers || {})
+    }
+  });
+  if (!res.ok) throw new Error((await res.json()).message || "Request failed");
+  return res.json();
+}
+
 // ===== Add Job =====
 document.getElementById("jobForm").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const title = document.getElementById("jt").value.trim();
-  const company = document.getElementById("jc").value.trim();
-  const category = document.getElementById("jcat").value;
-  const location = document.getElementById("jloc").value.trim();
-  const description = document.getElementById("jdesc").value.trim();
   try {
-    const res = await fetch(`${API_BASE}/api/jobs`, {
+    await apiFetch("jobs", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-      body: JSON.stringify({ title, company, category, location, description })
+      body: JSON.stringify({
+        title: jt.value.trim(),
+        company: jc.value.trim(),
+        category: jcat.value,
+        location: jloc.value.trim(),
+        description: jdesc.value.trim()
+      })
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || "Failed to add job");
-    alert("✅ Job added successfully"); e.target.reset();
+    alert("✅ Job added successfully");
+    e.target.reset();
+    renderJobs();
   } catch (err) { alert("❌ " + err.message); }
 });
 
 // ===== Add Member =====
 document.getElementById("memberForm").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const name = document.getElementById("mname").value.trim();
-  const role = document.getElementById("mrole").value.trim();
   try {
-    const res = await fetch(`${API_BASE}/api/members`, {
+    await apiFetch("members", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-      body: JSON.stringify({ name, role })
+      body: JSON.stringify({
+        name: mname.value.trim(),
+        role: mrole.value.trim()
+      })
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || "Failed to add member");
-    alert("✅ Member added successfully"); e.target.reset();
+    alert("✅ Member added successfully");
+    e.target.reset();
+    renderMembers();
   } catch (err) { alert("❌ " + err.message); }
 });
 
 // ===== Add Offer =====
 document.getElementById("offerForm").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const title = document.getElementById("ot").value.trim();
-  const price = document.getElementById("op").value.trim();
-  const description = document.getElementById("od").value.trim();
   try {
-    const res = await fetch(`${API_BASE}/api/offers`, {
+    await apiFetch("offers", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-      body: JSON.stringify({ title, price, description })
+      body: JSON.stringify({
+        title: ot.value.trim(),
+        price: op.value.trim(),
+        description: od.value.trim()
+      })
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || "Failed to add offer");
-    alert("✅ Offer added successfully"); e.target.reset();
+    alert("✅ Offer added successfully");
+    e.target.reset();
+    renderOffers();
   } catch (err) { alert("❌ " + err.message); }
 });
 
-// ===== Popups =====
-const popupForm = document.getElementById("popupForm");
-const popupList = document.getElementById("popupList");
+// ===== Render Data =====
+async function renderJobs() {
+  try {
+    const jobs = await apiFetch("jobs");
+    jobsList.innerHTML = jobs.map(j =>
+      `<div class="list-item"><span>${j.title} @ ${j.company}</span></div>`
+    ).join("") || "<p style='color:var(--muted)'>No jobs yet.</p>";
+  } catch (err) { jobsList.innerHTML = "<p>Error loading jobs</p>"; }
+}
+async function renderMembers() {
+  try {
+    const members = await apiFetch("members");
+    membersList.innerHTML = members.map(m =>
+      `<div class="list-item"><span>${m.name} (${m.role})</span></div>`
+    ).join("") || "<p style='color:var(--muted)'>No members yet.</p>";
+  } catch (err) { membersList.innerHTML = "<p>Error loading members</p>"; }
+}
+async function renderOffers() {
+  try {
+    const offers = await apiFetch("offers");
+    offersList.innerHTML = offers.map(o =>
+      `<div class="list-item"><span>${o.title} — $${o.price}</span></div>`
+    ).join("") || "<p style='color:var(--muted)'>No offers yet.</p>";
+  } catch (err) { offersList.innerHTML = "<p>Error loading offers</p>"; }
+}
 async function renderPopups() {
   try {
-    const res = await fetch(`${API_BASE}/api/popups`);
-    const popups = await res.json();
-    popupList.innerHTML = "";
-    if (!popups.length) { popupList.innerHTML = "<p style='color:var(--muted)'>No popups yet.</p>"; return; }
-    popups.forEach(p => {
-      const div = document.createElement("div");
-      div.className = "list-item";
-      div.innerHTML = `<span>${p.text} ${p.enabled?'✅':''}</span>
-        <div class="actions">
-          <button class="btn" onclick="editPopup(${p.id})">Edit</button>
-          <button class="btn danger" onclick="deletePopup(${p.id})">Delete</button>
-        </div>`;
-      popupList.appendChild(div);
-    });
-  } catch (err) { console.error(err); }
+    const popups = await apiFetch("popups");
+    popupList.innerHTML = popups.map(p =>
+      `<div class="list-item"><span>${p.text} ${p.enabled?'✅':''}</span></div>`
+    ).join("") || "<p style='color:var(--muted)'>No popups yet.</p>";
+  } catch (err) { popupList.innerHTML = "<p>Error loading popups</p>"; }
 }
-popupForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const text = document.getElementById("popupText").value.trim();
-  const enabled = document.getElementById("popupEnabled").checked;
-  try {
-    const res = await fetch(`${API_BASE}/api/popups`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-      body: JSON.stringify({ text, enabled })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || "Failed to add popup");
-    alert("✅ Popup added"); popupForm.reset(); renderPopups();
-  } catch (err) { alert("❌ " + err.message); }
-});
+
+// ===== Init =====
+renderJobs();
+renderMembers();
+renderOffers();
 renderPopups();
 </script>
 </body>
 </html>
+
+
 
 
 
