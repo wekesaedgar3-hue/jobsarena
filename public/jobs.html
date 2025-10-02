@@ -5,53 +5,14 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Available Jobs — JobBoard</title>
 <style>
-  body {
-    font-family: Inter, Arial, sans-serif;
-    background: #f6f8fb;
-    margin: 0;
-    color: #0f172a;
-    padding: 20px;
-  }
-  header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: #fff;
-    padding: 12px 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    border-radius: 8px;
-    margin-bottom: 20px;
-  }
-  header .brand {
-    font-weight: 700;
-    font-size: 20px;
-    color: #0ea5a4;
-  }
-  header nav a {
-    margin-left: 16px;
-    color: #0f172a;
-    text-decoration: none;
-    font-weight: 600;
-    cursor: pointer;
-  }
-  h1 {
-    margin-bottom: 20px;
-    color: #0ea5a4;
-  }
-  .job-card {
-    background: #fff;
-    padding: 14px;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.06);
-    margin-bottom: 12px;
-  }
-  .job-card h3 {
-    margin: 0 0 6px 0;
-    color: #0ea5a4;
-  }
-  .job-card p {
-    margin: 4px 0;
-  }
+  body {font-family: Inter, Arial, sans-serif;background: #f6f8fb;margin: 0;color: #0f172a;padding: 20px;}
+  header {display: flex;justify-content: space-between;align-items: center;background: #fff;padding: 12px 20px;box-shadow: 0 2px 8px rgba(0,0,0,0.05);border-radius: 8px;margin-bottom: 20px;}
+  header .brand {font-weight: 700;font-size: 20px;color: #0ea5a4;}
+  header nav a {margin-left: 16px;color: #0f172a;text-decoration: none;font-weight: 600;cursor: pointer;}
+  h1 {margin-bottom: 20px;color: #0ea5a4;}
+  .job-card {background: #fff;padding: 14px;border-radius: 12px;box-shadow: 0 4px 15px rgba(0,0,0,0.06);margin-bottom: 12px;}
+  .job-card h3 {margin: 0 0 6px 0;color: #0ea5a4;}
+  .job-card p {margin: 4px 0;}
 </style>
 </head>
 <body>
@@ -67,7 +28,10 @@
 <div id="jobsList">Loading jobs...</div>
 
 <script>
-const API_BASE = "http://localhost:5000";
+// ✅ Dynamic API base
+const API_BASE = window.location.hostname === "localhost"
+  ? "http://localhost:5000"
+  : "https://jobsarena.onrender.com";
 
 // Get user session
 function getSession() {
@@ -124,4 +88,5 @@ loadJobs();
 </script>
 </body>
 </html>
+
 

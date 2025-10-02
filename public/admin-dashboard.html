@@ -28,17 +28,13 @@
 </div>
 <div class="wrap">
   <div class="cols">
-    <!-- Add Job -->
     <div class="card">
       <h3>Add Job</h3>
       <form id="jobForm">
         <label>Title<input id="jt" required /></label>
         <label>Company<input id="jc" required /></label>
         <label>Category<select id="jcat">
-          <option>Housekeeping</option>
-          <option>Mechanics</option>
-          <option>Medical</option>
-          <option>Engineering</option>
+          <option>Housekeeping</option><option>Mechanics</option><option>Medical</option><option>Engineering</option>
         </select></label>
         <label>Location<input id="jloc" /></label>
         <label>Description<textarea id="jdesc"></textarea></label>
@@ -46,7 +42,6 @@
       </form>
     </div>
 
-    <!-- Add Member / Offer -->
     <div class="card">
       <h3>Add Member</h3>
       <form id="memberForm">
@@ -54,9 +49,7 @@
         <label>Role<input id="mrole" placeholder="example: recruiter"/></label>
         <button class="btn" type="submit">Add Member</button>
       </form>
-
       <hr style="margin:12px 0"/>
-
       <h3>Add Offer</h3>
       <form id="offerForm">
         <label>Title<input id="ot" required /></label>
@@ -67,11 +60,10 @@
     </div>
   </div>
 
-  <!-- Popup Manager -->
   <div class="card">
     <h3>Manage Popups</h3>
     <form id="popupForm">
-      <label>Popup Text<textarea id="popupText" required placeholder="e.g. Night Offer: Join now at 30% off"></textarea></label>
+      <label>Popup Text<textarea id="popupText" required></textarea></label>
       <label style="display:block;margin-top:8px"><input type="checkbox" id="popupEnabled" /> Enable popup</label>
       <button class="btn" type="submit">Add Popup</button>
     </form>
@@ -81,7 +73,10 @@
 </div>
 
 <script>
-const API_BASE = "http://localhost:5000";
+// ✅ Dynamic API base
+const API_BASE = window.location.hostname === "localhost"
+  ? "http://localhost:5000"
+  : "https://jobsarena.onrender.com";
 
 // ===== Admin guard =====
 const session = JSON.parse(localStorage.getItem("jb_session") || "null");
@@ -99,7 +94,6 @@ document.getElementById("jobForm").addEventListener("submit", async (e) => {
   const category = document.getElementById("jcat").value;
   const location = document.getElementById("jloc").value.trim();
   const description = document.getElementById("jdesc").value.trim();
-
   try {
     const res = await fetch(`${API_BASE}/api/jobs`, {
       method: "POST",
@@ -108,8 +102,7 @@ document.getElementById("jobForm").addEventListener("submit", async (e) => {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Failed to add job");
-    alert("✅ Job added successfully");
-    e.target.reset();
+    alert("✅ Job added successfully"); e.target.reset();
   } catch (err) { alert("❌ " + err.message); }
 });
 
@@ -148,10 +141,9 @@ document.getElementById("offerForm").addEventListener("submit", async (e) => {
   } catch (err) { alert("❌ " + err.message); }
 });
 
-// ===== Add Popup =====
+// ===== Popups =====
 const popupForm = document.getElementById("popupForm");
 const popupList = document.getElementById("popupList");
-
 async function renderPopups() {
   try {
     const res = await fetch(`${API_BASE}/api/popups`);
@@ -185,12 +177,11 @@ popupForm.addEventListener("submit", async (e) => {
     alert("✅ Popup added"); popupForm.reset(); renderPopups();
   } catch (err) { alert("❌ " + err.message); }
 });
-
-// Initial render
 renderPopups();
 </script>
 </body>
 </html>
+
 
 
 
